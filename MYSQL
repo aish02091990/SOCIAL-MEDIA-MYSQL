@@ -1,0 +1,142 @@
+USE EMPLOYEE;
+
+create table
+posts (
+post_id INT AUTO_INCREMENT PRIMARY KEY,
+content VARCHAR(255)
+);
+
+create table hashtags (
+hashtag_id INT AUTO_INCREMENT PRIMARY KEY,
+tag VARCHAR(50) UNIQUE
+);
+
+desc hashtags;
+
+INSERT INTO hashtags (tags)
+VALUES ('mysql'):
+ON DUPLICATE KEY UPDATE hashtag_id = LAST_INSERT_ID(hashtag_id);
+
+create table post_hashtags
+(
+post_id INT,
+hashtag_id INT,
+UNIQUE (post_id, hashtag_id)
+
+);
+
+desc post_hashtags;
+
+INSERT INTO posts (content)
+VALUES ('My first transaction post');
+
+INSERT INTO hashtags (tag)
+VALUES ('mysql')
+ON DUPLICATE KEY UPDATE hashtag_id = LAST_INSERT_ID(hashtag_id);
+
+CREATE TABLE users (
+user_id INT PRIMARY KEY,
+username VARCHAR(50),
+created_at DATE
+);
+
+drop table users;
+drop table posts;
+
+CREATE TABLE posts (
+post_id INT PRIMARY KEY,
+user_id INT,
+
+content TEXT,
+created_at DATE,
+FOREIGN KEY (user_id) REFERENCES users(user_id)
+);
+
+CREATE TABLE likes (
+like_id INT PRIMARY KEY,
+post_id INT,
+user_id INT,
+created_at DATE,
+FOREIGN KEY (post_id) REFERENCES posts(post_id)
+);
+
+CREATE TABLE comments (
+comment_id INT PRIMARY KEY,
+post_id INT,
+user_id INT,
+created_at DATE,
+FOREIGN KEY (post_id) REFERENCES posts(post_id)
+);
+
+CREATE TABLE followers (
+follower_id INT,
+following_id INT,
+followed_at DATE
+);
+
+drop table hashtags;
+
+drop table post_hashtags;
+
+CREATE TABLE hashtags (
+hashtag_id INT PRIMARY KEY,
+tag VARCHAR(50)
+);
+
+CREATE TABLE post_hashtags (
+post_id INT,
+hashtag_id INT
+);
+
+SELECT
+u.user_id,
+u.username,
+COUNT(DISTINCT l.like_id)
++ COUNT(DISTINCT c.comment_id) AS total_engagement
+FROM users u
+JOIN posts p ON u.user_id = p.user_id
+LEFT JOIN likes l ON p.post_id = l.post_id
+LEFT JOIN comments c ON p.post_id = c.post_id
+GROUP BY u.user_id, u.username
+
+ORDER BY total_engagement DESC
+LIMIT 10;
+
+SELECT
+DATE(created_at) AS post_date,
+COUNT(*) AS total_posts
+FROM posts
+GROUP BY DATE(created_at)
+ORDER BY post_date;
+
+SELECT
+YEAR(created_at) AS year,
+WEEK(created_at) AS week,
+COUNT(*) AS total_posts
+FROM posts
+GROUP BY YEAR(created_at), WEEK(created_at)
+ORDER BY year, week;
+
+SELECT
+u.user_id,
+u.username,
+COUNT(f.follower_id) AS new_followers
+FROM users u
+JOIN followers f
+ON u.user_id = f.following_id
+WHERE f.followed_at >= CURDATE() - INTERVAL 30 DAY
+
+GROUP BY u.user_id, u.username
+ORDER BY new_followers DESC
+LIMIT 10;
+
+SELECT
+h.tag,
+COUNT(ph.post_id) AS usage_count
+FROM hashtags h
+JOIN post_hashtags ph ON h.hashtag_id = ph.hashtag_id
+JOIN posts p ON ph.post_id = p.post_id
+WHERE p.created_at >= CURDATE() - INTERVAL 30 DAY
+GROUP BY h.tag
+ORDER BY usage_count DESC
+LIMIT 10;
